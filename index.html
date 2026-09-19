@@ -34,7 +34,7 @@
             display: flex;
             justify-content: space-between;
             gap: 10px;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
         }
 
         .stat {
@@ -70,6 +70,7 @@
             font-weight: bold;
             cursor: pointer;
             color: white;
+            transition: 0.2s;
         }
 
         button:hover {
@@ -96,6 +97,14 @@
             background: #f97316;
         }
 
+        .purple {
+            background: #8b5cf6;
+        }
+
+        .gray {
+            background: #475569;
+        }
+
         #result {
             min-height: 35px;
             margin-top: 25px;
@@ -107,11 +116,6 @@
 
         .wrong {
             color: #f87171;
-        }
-
-        .restart {
-            background: #475569;
-            margin-top: 20px;
         }
 
         .word-area {
@@ -154,7 +158,54 @@
             margin-bottom: 10px;
         }
 
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .pause-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 6, 23, 0.92);
+            z-index: 999;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .pause-overlay.active {
+            display: flex;
+        }
+
+        .pause-overlay h2 {
+            font-size: 42px;
+            margin-bottom: 20px;
+        }
+
+        .score-box {
+            display: none;
+            background: #1e293b;
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 20px;
+        }
+
+        .score-box.show {
+            display: block;
+        }
+
+        .save-info {
+            color: #94a3b8;
+            font-size: 13px;
+            margin-top: 10px;
+        }
+
         @media (max-width: 500px) {
+
             .stats {
                 flex-wrap: wrap;
             }
@@ -165,6 +216,10 @@
 
             h1 {
                 font-size: 32px;
+            }
+
+            .door {
+                font-size: 90px;
             }
         }
     </style>
@@ -207,28 +262,95 @@
     </h2>
 
 
-    <div class="buttons" id="buttons">
-
-        <button class="red" onclick="checkDoor('red')">
-            🔴 Merah
-        </button>
-
-        <button class="blue" onclick="checkDoor('blue')">
-            🔵 Biru
-        </button>
-
-        <button class="green" onclick="checkDoor('green')">
-            🟢 Hijau
-        </button>
-
-    </div>
+    <div class="buttons" id="buttons"></div>
 
 
     <h2 id="result"></h2>
 
 
-    <button class="restart" onclick="restartGame()">
-        🔄 Restart
+    <!-- CONTROL -->
+
+    <div class="controls">
+
+        <button
+            class="purple"
+            onclick="togglePause()">
+
+            ⏸️ Pause
+
+        </button>
+
+        <button
+            class="blue"
+            onclick="toggleScore()">
+
+            📊 Lihat Skor
+
+        </button>
+
+        <button
+            class="gray"
+            onclick="restartGame()">
+
+            🔄 Restart
+
+        </button>
+
+    </div>
+
+
+    <!-- SCORE PANEL -->
+
+    <div id="scoreBox" class="score-box">
+
+        <h2>📊 Statistik Game</h2>
+
+        <p>
+            🚪 Door:
+            <strong id="scoreDoor">1</strong>
+        </p>
+
+        <p>
+            ❤️ Nyawa:
+            <strong id="scoreLives">3</strong>
+        </p>
+
+        <p>
+            ⭐ Skor:
+            <strong id="scoreTotal">0</strong>
+        </p>
+
+        <p>
+            🏆 Progress:
+            <strong id="scoreProgress">1%</strong>
+        </p>
+
+    </div>
+
+
+    <p class="save-info">
+        💾 Progress tersimpan otomatis
+    </p>
+
+</div>
+
+
+<!-- PAUSE SCREEN -->
+
+<div id="pauseOverlay" class="pause-overlay">
+
+    <h2>⏸️ GAME PAUSED</h2>
+
+    <p>
+        Waktu berhenti sementara.
+    </p>
+
+    <button
+        class="green"
+        onclick="togglePause()">
+
+        ▶️ Lanjutkan
+
     </button>
 
 </div>
@@ -236,13 +358,24 @@
 
 <script>
 
+    // =====================================
+    // VARIABLE GAME
+    // =====================================
+
     let lives = 3;
     let score = 0;
     let doorNumber = 1;
     let time = 30;
-    let timer;
+
+    let timer = null;
+
+    let paused = false;
 
     let currentQuestion = null;
+
+    let wordResult = "";
+
+    let questionDelay = null;
 
 
     // =====================================
@@ -262,7 +395,7 @@
         },
 
         {
-            question: " Cairan darah berwarna?",
+            question: "Cairan darah berwarna?",
             answer: "red"
         },
 
@@ -307,42 +440,42 @@
     const door3Questions = [
 
         {
-            pieces: ["N", "D", "I", "N", "A", "O", "E", "S", "A", "I"],
+            pieces: ["N","D","I","N","A","O","E","S","A","I"],
             answer: "INDONESIA"
         },
 
         {
-            pieces: ["R", "S", "L", "B", "A", "U", "I"],
+            pieces: ["R","S","L","B","A","U","I"],
             answer: "BRASIL"
         },
 
         {
-            pieces: ["P", "N", "A", "I", "J", "E", "G"],
+            pieces: ["P","N","A","I","J","E","G"],
             answer: "JEPANG"
         },
 
         {
-            pieces: ["A", "L", "I", "M", "U", "S","A", "Y", "I","A"],
+            pieces: ["A","L","I","M","U","S","A","Y","I","A"],
             answer: "MALAYSIA"
         },
 
         {
-            pieces: ["A", "L", "I", "T", "U", "Y"],
+            pieces: ["A","L","I","T","U","Y"],
             answer: "ITALY"
         },
 
         {
-            pieces: ["U", "I", "T", "U", "I","K", "R", "I"],
+            pieces: ["U","I","T","U","I","K","R","I"],
             answer: "TURKI"
         },
 
         {
-            pieces: ["A", "L", "S", "O", ],
+            pieces: ["A","L","S","O"],
             answer: "LAOS"
         },
 
         {
-            pieces: ["K", "M", "O", "B", "A", "A", "J"],
+            pieces: ["K","M","O","B","A","A","J"],
             answer: "KAMBOJA"
         }
 
@@ -378,98 +511,209 @@
 
     ];
 
+
     const door5Questions = [
 
-    {
-        question: "💼 Aku bekerja di rumah sakit.<br>Aku memeriksa dan mengobati pasien.<br>Aku adalah...",
-        answer: "dokter"
-    },
+        {
+            question:
+                "💼 Aku bekerja di rumah sakit.<br>" +
+                "Aku memeriksa dan mengobati pasien.<br>" +
+                "Aku adalah...",
+            answer: "dokter"
+        },
 
-    {
-        question: "💼 Aku bekerja di sekolah.<br>Aku mengajar murid.<br>Aku adalah...",
-        answer: "guru"
-    },
+        {
+            question:
+                "💼 Aku bekerja di sekolah.<br>" +
+                "Aku mengajar murid.<br>" +
+                "Aku adalah...",
+            answer: "guru"
+        },
 
-    {
-        question: "💼 Aku menerbangkan pesawat dan membawa penumpang.<br>Aku adalah...",
-        answer: "pilot"
-    },
+        {
+            question:
+                "💼 Aku menerbangkan pesawat dan membawa penumpang.<br>" +
+                "Aku adalah...",
+            answer: "pilot"
+        },
 
-    {
-        question: "💼 Aku memasak makanan di restoran.<br>Aku adalah...",
-        answer: "koki"
-    },
+        {
+            question:
+                "💼 Aku memasak makanan di restoran.<br>" +
+                "Aku adalah...",
+            answer: "koki"
+        },
 
-    {
-        question: "💼 Aku menjaga keamanan dan menegakkan hukum.<br>Aku adalah...",
-        answer: "polisi"
-    },
+        {
+            question:
+                "💼 Aku menjaga keamanan dan menegakkan hukum.<br>" +
+                "Aku adalah...",
+            answer: "polisi"
+        },
 
-    {
-        question: "💼 Aku menanam dan merawat tanaman di lahan pertanian.<br>Aku adalah...",
-        answer: "petani"
-    }
+        {
+            question:
+                "💼 Aku menanam dan merawat tanaman di lahan pertanian.<br>" +
+                "Aku adalah...",
+            answer: "petani"
+        }
 
-];
+    ];
 
-const door6Questions = [
 
-    {
-        question: "🦉 Apa bahasa Inggris dari BURUNG HANTU?",
-        answer: "owl"
-    },
+    const door6Questions = [
 
-    {
-        question: "🐴 Apa bahasa Inggris dari KUDA?",
-        answer: "horse"
-    },
+        {
+            question: "🦉 Apa bahasa Inggris dari BURUNG HANTU?",
+            answer: "owl"
+        },
 
-    {
-        question: "🦅 Apa bahasa Inggris dari ELANG?",
-        answer: "eagle"
-    },
+        {
+            question: "🐴 Apa bahasa Inggris dari KUDA?",
+            answer: "horse"
+        },
 
-    {
-        question: "🐥 Apa bahasa Inggris dari ANAK AYAM?",
-        answer: "chick"
-    },
+        {
+            question: "🦅 Apa bahasa Inggris dari ELANG?",
+            answer: "eagle"
+        },
 
-    {
-        question: "🐄 Apa bahasa Inggris dari SAPI?",
-        answer: "cow"
-    }
+        {
+            question: "🐥 Apa bahasa Inggris dari ANAK AYAM?",
+            answer: "chick"
+        },
 
-];
+        {
+            question: "🐄 Apa bahasa Inggris dari SAPI?",
+            answer: "cow"
+        }
 
-const door7Questions = [
+    ];
 
-    {
-        question: "10 + 1 + 20 = ?",
-        answer: "31"
-    },
 
-    {
-        question: "3 - 4 + 5 = ?",
-        answer: "4"
-    },
+    const door7Questions = [
 
-    {
-        question: "10 - 5 * 3 = ?",
-        answer: "-5"
-    },
+        {
+            question: "10 + 1 + 20 = ?",
+            answer: "31"
+        },
 
-    {
-        question: "9 + 12 + 6 + 6 * 34 = ?",
-        answer: "231"
-    },
+        {
+            question: "3 - 4 + 5 = ?",
+            answer: "4"
+        },
 
-    {
-        question: "7*7 = ?",
-        answer: "49"
-    }
+        {
+            question: "10 - 5 * 3 = ?",
+            answer: "-5"
+        },
 
-];
+        {
+            question: "9 + 12 + 6 + 6 * 34 = ?",
+            answer: "231"
+        },
 
+        {
+            question: "7 * 7 = ?",
+            answer: "49"
+        }
+
+    ];
+
+
+    const door8Questions = [
+
+        {
+            question: "🧩 2 → 4 → 8 → 16 → ❓",
+            answer: "32"
+        },
+
+        {
+            question: "🧩 3 → 6 → 12 → 24 → ❓",
+            answer: "48"
+        },
+
+        {
+            question: "🧩 5 → 10 → 20 → 40 → ❓",
+            answer: "80"
+        },
+
+        {
+            question: "🧩 1 → 4 → 9 → 16 → ❓",
+            answer: "25"
+        },
+
+        {
+            question: "🧩 2 → 5 → 10 → 17 → ❓",
+            answer: "26"
+        }
+
+    ];
+
+
+    const door9Questions = [
+
+        {
+            question:
+                "😈 Pilih benda yang bisa digunakan untuk menulis!",
+            options: [
+                "Bantal",
+                "Pensil",
+                "Sepatu",
+                "Sendok"
+            ],
+            answer: "Pensil"
+        },
+
+        {
+            question:
+                "😈 Pilih hewan yang bisa terbang!",
+            options: [
+                "Kucing",
+                "Ikan",
+                "Burung",
+                "Kelinci"
+            ],
+            answer: "Burung"
+        },
+
+        {
+            question:
+                "😈 Pilih benda yang biasanya ada di dapur!",
+            options: [
+                "Kompor",
+                "Bantal",
+                "Buku",
+                "Sepeda"
+            ],
+            answer: "Kompor"
+        },
+
+        {
+            question:
+                "😈 Pilih benda yang digunakan untuk melihat waktu!",
+            options: [
+                "Jam",
+                "Piring",
+                "Tas",
+                "Kursi"
+            ],
+            answer: "Jam"
+        },
+
+        {
+            question:
+                "😈 Pilih sesuatu yang biasanya berwarna hijau!",
+            options: [
+                "Rumput",
+                "Susu",
+                "Arang",
+                "Salju"
+            ],
+            answer: "Rumput"
+        }
+
+    ];
 
 
     // =====================================
@@ -479,8 +723,110 @@ const door7Questions = [
     function randomItem(array) {
 
         return array[
-            Math.floor(Math.random() * array.length)
+            Math.floor(
+                Math.random() * array.length
+            )
         ];
+
+    }
+
+
+    // =====================================
+    // SAVE GAME
+    // =====================================
+
+    function saveGame() {
+
+        const gameData = {
+
+            doorNumber: doorNumber,
+
+            lives: lives,
+
+            score: score,
+
+            time: time
+
+        };
+
+        localStorage.setItem(
+            "100DoorsSave",
+            JSON.stringify(gameData)
+        );
+
+    }
+
+
+    // =====================================
+    // LOAD GAME
+    // =====================================
+
+    function loadGame() {
+
+        const savedGame =
+            localStorage.getItem("100DoorsSave");
+
+        if (!savedGame) {
+
+            return false;
+
+        }
+
+        try {
+
+            const gameData =
+                JSON.parse(savedGame);
+
+            doorNumber =
+                gameData.doorNumber || 1;
+
+            lives =
+                gameData.lives ?? 3;
+
+            score =
+                gameData.score ?? 0;
+
+            time =
+                gameData.time ?? 30;
+
+            updateStats();
+
+            return true;
+
+        } catch (error) {
+
+            localStorage.removeItem(
+                "100DoorsSave"
+            );
+
+            return false;
+
+        }
+
+    }
+
+
+    // =====================================
+    // UPDATE STATS
+    // =====================================
+
+    function updateStats() {
+
+        document.getElementById(
+            "doorNumber"
+        ).textContent = doorNumber;
+
+        document.getElementById(
+            "lives"
+        ).textContent = lives;
+
+        document.getElementById(
+            "score"
+        ).textContent = score;
+
+        document.getElementById(
+            "timer"
+        ).textContent = time;
 
     }
 
@@ -493,24 +839,62 @@ const door7Questions = [
 
         clearInterval(timer);
 
+        if (paused) return;
+
         timer = setInterval(() => {
+
+            if (paused) return;
 
             time--;
 
-            document.getElementById("timer").textContent =
-                time;
+            document.getElementById(
+                "timer"
+            ).textContent = time;
+
+            saveGame();
 
             if (time <= 0) {
 
                 clearInterval(timer);
 
-                document.getElementById("result").textContent =
+                document.getElementById(
+                    "result"
+                ).textContent =
                     "⏰ Waktu habis!";
 
-                document.getElementById("result").className =
-                    "wrong";
+                document.getElementById(
+                    "result"
+                ).className = "wrong";
 
                 disableButtons();
+
+                lives--;
+
+                document.getElementById(
+                    "lives"
+                ).textContent = lives;
+
+                saveGame();
+
+                if (lives <= 0) {
+
+                    gameOver();
+
+                } else {
+
+                    setTimeout(() => {
+
+                        time = getTimeForDoor();
+
+                        updateStats();
+
+                        setupCurrentDoor();
+
+                        startTimer();
+
+                    }, 1500);
+
+                }
 
             }
 
@@ -520,69 +904,189 @@ const door7Questions = [
 
 
     // =====================================
-    // DOOR 1
+    // TIME SETIAP DOOR
     // =====================================
 
-    function setupDoor1() {
+    function getTimeForDoor() {
 
-        currentQuestion =
-            randomItem(door1Questions);
+        if (doorNumber === 1) return 30;
 
+        if (doorNumber === 2) return 30;
 
-        document.getElementById("question").textContent =
-            currentQuestion.question;
+        if (doorNumber === 3) return 30;
 
+        if (doorNumber === 4) return 15;
 
-        document.getElementById("buttons").innerHTML = `
+        if (doorNumber === 5) return 20;
 
-            <button class="red"
-                onclick="checkDoor('red')">
-                🔴 Merah
-            </button>
+        if (doorNumber === 6) return 30;
 
-            <button class="blue"
-                onclick="checkDoor('blue')">
-                🔵 Biru
-            </button>
+        if (doorNumber === 7) return 20;
 
-            <button class="green"
-                onclick="checkDoor('green')">
-                🟢 Hijau
-            </button>
+        if (doorNumber === 8) return 20;
 
-        `;
+        if (doorNumber === 9) return 20;
+
+        return 30;
 
     }
 
 
-    function checkDoor(choice) {
+    // =====================================
+    // PAUSE
+    // =====================================
 
-        if (choice === currentQuestion.answer) {
+    function togglePause() {
 
-            score += 100;
+        paused = !paused;
 
-            document.getElementById("score").textContent =
-                score;
+        const overlay =
+            document.getElementById(
+                "pauseOverlay"
+            );
 
-            document.getElementById("result").textContent =
-                "🎉 BENAR! Pintu terbuka!";
-
-            document.getElementById("result").className =
-                "correct";
-
-            document.getElementById("door").classList.add("open");
-
-            disableButtons();
+        if (paused) {
 
             clearInterval(timer);
 
-            setTimeout(nextDoor, 1500);
+            overlay.classList.add("active");
+
+            saveGame();
 
         } else {
 
-            loseLife(
-                "💀 SALAH! Coba lagi."
+            overlay.classList.remove("active");
+
+            startTimer();
+
+        }
+
+    }
+
+
+    // =====================================
+    // SCORE PANEL
+    // =====================================
+
+    function toggleScore() {
+
+        const box =
+            document.getElementById(
+                "scoreBox"
             );
+
+        if (
+            box.classList.contains("show")
+        ) {
+
+            box.classList.remove("show");
+
+            return;
+
+        }
+
+        document.getElementById(
+            "scoreDoor"
+        ).textContent = doorNumber;
+
+        document.getElementById(
+            "scoreLives"
+        ).textContent = lives;
+
+        document.getElementById(
+            "scoreTotal"
+        ).textContent = score;
+
+        document.getElementById(
+            "scoreProgress"
+        ).textContent =
+            Math.min(
+                doorNumber,
+                100
+            ) + "%";
+
+        box.classList.add("show");
+
+    }
+
+
+    // =====================================
+    // SETUP DOOR
+    // =====================================
+
+    function setupCurrentDoor() {
+
+        document.getElementById(
+            "door"
+        ).classList.remove("open");
+
+        document.getElementById(
+            "result"
+        ).textContent = "";
+
+        document.getElementById(
+            "result"
+        ).className = "";
+
+        clearTimeout(questionDelay);
+
+        if (doorNumber === 1) {
+
+            setupDoor1();
+
+        }
+
+        else if (doorNumber === 2) {
+
+            setupDoor2();
+
+        }
+
+        else if (doorNumber === 3) {
+
+            setupDoor3();
+
+        }
+
+        else if (doorNumber === 4) {
+
+            setupDoor4();
+
+        }
+
+        else if (doorNumber === 5) {
+
+            setupDoor5();
+
+        }
+
+        else if (doorNumber === 6) {
+
+            setupDoor6();
+
+        }
+
+        else if (doorNumber === 7) {
+
+            setupDoor7();
+
+        }
+
+        else if (doorNumber === 8) {
+
+            setupDoor8();
+
+        }
+
+        else if (doorNumber === 9) {
+
+            setupDoor9();
+
+        }
+
+        else {
+
+            setupFutureDoor();
 
         }
 
@@ -597,69 +1101,85 @@ const door7Questions = [
 
         doorNumber++;
 
-        document.getElementById("doorNumber").textContent =
-            doorNumber;
+        time =
+            getTimeForDoor();
 
-        document.getElementById("door").classList.remove("open");
+        updateStats();
 
-        document.getElementById("result").textContent = "";
+        saveGame();
 
-        document.getElementById("result").className = "";
-
-
-        if (doorNumber === 2) {
-
-            setupDoor2();
-
-            time = 30;
-
-        }
-
-        else if (doorNumber === 3) {
-
-            setupDoor3();
-
-            time = 30;
-
-        }
-
-        else if (doorNumber === 4) {
-
-            setupDoor4();
-
-            time = 15;
-
-        }
-        else if (doorNumber === 5) {
-
-              setupDoor5();
-
-            time = 20;
-
-        }
-        else if (doorNumber === 6) {
-
-              setupDoor6();
-
-            time = 30;
-
-        }
-        else if (doorNumber === 7) {
-
-              setupDoor7();
-
-            time = 20;
-        
-        }
-
-
-
-
-        document.getElementById("timer").textContent =
-            time;
-
+        setupCurrentDoor();
 
         startTimer();
+
+    }
+
+
+    // =====================================
+    // DOOR 1
+    // =====================================
+
+    function setupDoor1() {
+
+        currentQuestion =
+            randomItem(
+                door1Questions
+            );
+
+        document.getElementById(
+            "question"
+        ).textContent =
+            currentQuestion.question;
+
+        document.getElementById(
+            "buttons"
+        ).innerHTML = `
+
+            <button
+                class="red"
+                onclick="checkDoor('red')">
+
+                🔴 Merah
+
+            </button>
+
+            <button
+                class="blue"
+                onclick="checkDoor('blue')">
+
+                🔵 Biru
+
+            </button>
+
+            <button
+                class="green"
+                onclick="checkDoor('green')">
+
+                🟢 Hijau
+
+            </button>
+
+        `;
+
+    }
+
+
+    function checkDoor(choice) {
+
+        if (
+            choice ===
+            currentQuestion.answer
+        ) {
+
+            winDoor(100);
+
+        } else {
+
+            loseLife(
+                "💀 SALAH! Coba lagi."
+            );
+
+        }
 
     }
 
@@ -671,14 +1191,18 @@ const door7Questions = [
     function setupDoor2() {
 
         currentQuestion =
-            randomItem(door2Questions);
+            randomItem(
+                door2Questions
+            );
 
-
-        document.getElementById("question").textContent =
+        document.getElementById(
+            "question"
+        ).textContent =
             "🧠 Hafalkan angka ini!";
 
-
-        document.getElementById("buttons").innerHTML = `
+        document.getElementById(
+            "buttons"
+        ).innerHTML = `
 
             <div
                 id="memoryNumber"
@@ -690,42 +1214,55 @@ const door7Questions = [
 
         `;
 
+        questionDelay =
+            setTimeout(() => {
 
-        setTimeout(() => {
+                if (
+                    doorNumber !== 2 ||
+                    paused
+                ) {
+                    return;
+                }
 
-            if (doorNumber !== 2) return;
+                const number =
+                    document.getElementById(
+                        "memoryNumber"
+                    );
 
+                if (number) {
 
-            document.getElementById("memoryNumber").textContent =
-                "❓";
+                    number.textContent = "❓";
 
+                }
 
-            document.getElementById("buttons").innerHTML = `
+                document.getElementById(
+                    "buttons"
+                ).innerHTML = `
 
-                <div style="width:100%">
+                    <div style="width:100%">
 
-                    <input
-                        id="memoryAnswer"
-                        class="memory-input"
-                        type="text"
-                        placeholder="Masukkan urutan..."
-                    >
+                        <input
+                            id="memoryAnswer"
+                            class="memory-input"
+                            type="text"
+                            placeholder="Masukkan urutan..."
+                        >
 
-                    <br>
+                        <br>
 
-                    <button
-                        class="blue"
-                        onclick="checkMemory()">
+                        <button
+                            class="blue"
+                            onclick="checkMemory()">
 
-                        🔓 Buka Pintu
+                            🔓 Buka Pintu
 
-                    </button>
+                        </button>
 
-                </div>
+                    </div>
 
-            `;
+                `;
 
-        }, 3000);
+            }, 3000);
 
     }
 
@@ -733,33 +1270,21 @@ const door7Questions = [
     function checkMemory() {
 
         const input =
-            document.getElementById("memoryAnswer");
+            document.getElementById(
+                "memoryAnswer"
+            );
 
+        if (!input) return;
 
         const answer =
             input.value.trim();
 
+        if (
+            answer ===
+            currentQuestion.answer
+        ) {
 
-        if (answer === currentQuestion.answer) {
-
-            score += 150;
-
-            document.getElementById("score").textContent =
-                score;
-
-            document.getElementById("result").textContent =
-                "🧠 BENAR! Ingatanmu kuat!";
-
-            document.getElementById("result").className =
-                "correct";
-
-            document.getElementById("door").classList.add("open");
-
-            disableButtons();
-
-            clearInterval(timer);
-
-            setTimeout(nextDoor, 1500);
+            winDoor(150);
 
         } else {
 
@@ -779,29 +1304,33 @@ const door7Questions = [
     function setupDoor3() {
 
         currentQuestion =
-            randomItem(door3Questions);
+            randomItem(
+                door3Questions
+            );
 
-
-        document.getElementById("question").textContent =
+        document.getElementById(
+            "question"
+        ).textContent =
             "🌍 Susun potongan huruf menjadi nama negara!";
-
-
-        // Acak posisi potongan
 
         let pieces =
             [...currentQuestion.pieces];
 
+        pieces.sort(
+            () =>
+                Math.random() - 0.5
+        );
 
-        pieces.sort(() => Math.random() - 0.5);
-
-
-        document.getElementById("buttons").innerHTML = `
+        document.getElementById(
+            "buttons"
+        ).innerHTML = `
 
             <div class="word-area">
 
                 <div class="word-pieces">
 
-                    ${pieces.map((piece, index) => `
+                    ${pieces.map(
+                        piece => `
 
                         <button
                             class="blue word"
@@ -812,26 +1341,23 @@ const door7Questions = [
 
                         </button>
 
-                    `).join("")}
+                    `
+                    ).join("")}
 
                 </div>
 
-
                 <p>Jawabanmu:</p>
-
 
                 <div
                     id="wordAnswer"
                     class="answer">
-
                 </div>
 
             </div>
 
         `;
 
-
-        window.wordResult = "";
+        wordResult = "";
 
     }
 
@@ -841,57 +1367,29 @@ const door7Questions = [
         const word =
             button.dataset.word;
 
+        wordResult += word;
 
-        window.wordResult += word;
-
-
-        document.getElementById("wordAnswer").textContent =
-            window.wordResult;
-
+        document.getElementById(
+            "wordAnswer"
+        ).textContent =
+            wordResult;
 
         button.disabled = true;
 
         button.style.opacity = "0.4";
 
-
-        // BENAR
-
         if (
-            window.wordResult === currentQuestion.answer
+            wordResult ===
+            currentQuestion.answer
         ) {
 
-            score += 200;
-
-            document.getElementById("score").textContent =
-                score;
-
-
-            document.getElementById("result").textContent =
-                "🎉 BENAR! 🇮🇩 Kamu berhasil!";
-
-
-            document.getElementById("result").className =
-                "correct";
-
-
-            document.getElementById("door").classList.add("open");
-
-
-            disableButtons();
-
-            clearInterval(timer);
-
-
-            setTimeout(nextDoor, 1500);
+            winDoor(200);
 
         }
 
-
-        // SALAH
-
         else if (
             !currentQuestion.answer.startsWith(
-                window.wordResult
+                wordResult
             )
         ) {
 
@@ -899,502 +1397,15 @@ const door7Questions = [
                 "❌ Urutan salah! Coba lagi."
             );
 
+            wordResult = "";
 
-            window.wordResult = "";
-
-
-            document.getElementById("wordAnswer").textContent =
-                "";
-
+            document.getElementById(
+                "wordAnswer"
+            ).textContent = "";
 
             enableWordButtons();
 
         }
-
-    }
-
-
-    // =====================================
-    // DOOR 4
-    // =====================================
-
-    function setupDoor4() {
-
-        currentQuestion =
-            randomItem(door4Questions);
-
-
-        document.getElementById("question").textContent =
-            currentQuestion.question;
-
-
-        document.getElementById("buttons").innerHTML = `
-
-            <div style="width:100%">
-
-                <p>
-                    ⏱️ Kamu hanya punya 15 detik!
-                </p>
-
-
-                <div style="
-                    display:grid;
-                    grid-template-columns:repeat(2, 1fr);
-                    gap:10px;
-                    margin-bottom:15px;
-                ">
-
-                    <button
-                        class="blue planet"
-                        data-answer="Merkurius">
-                        ☿️ Merkurius
-                    </button>
-
-
-                    <button
-                        class="blue planet"
-                        data-answer="Venus">
-                        🟡 Venus
-                    </button>
-
-
-                    <button
-                        class="blue planet"
-                        data-answer="Bumi">
-                        🌍 Bumi
-                    </button>
-
-
-                    <button
-                        class="blue planet"
-                        data-answer="Mars">
-                        🔴 Mars
-                    </button>
-
-
-                    <button
-                        class="blue planet"
-                        data-answer="Jupiter">
-                        🟠 Jupiter
-                    </button>
-
-
-                    <button
-                        class="blue planet"
-                        data-answer="Saturnus">
-                        🪐 Saturnus
-                    </button>
-
-
-                    <button
-                        class="blue planet"
-                        data-answer="Uranus">
-                        🔵 Uranus
-                    </button>
-
-
-                    <button
-                        class="blue planet"
-                        data-answer="Neptunus">
-                        🔵 Neptunus
-                    </button>
-
-                </div>
-
-            </div>
-
-        `;
-
-
-        document.querySelectorAll(".planet")
-            .forEach(button => {
-
-                button.addEventListener(
-                    "click",
-                    function () {
-
-                        if (
-                            this.dataset.answer ===
-                            currentQuestion.answer
-                        ) {
-
-                            score += 250;
-
-                            document.getElementById("score")
-                                .textContent = score;
-
-
-                            document.getElementById("result")
-                                .textContent =
-                                "🎉 BENAR! Pintu terbuka!";
-
-
-                            document.getElementById("result")
-                                .className =
-                                "correct";
-
-
-                            document.getElementById("door")
-                                .classList.add("open");
-
-
-                            disableButtons();
-
-                            clearInterval(timer);
-
-
-                            setTimeout(
-                                nextDoor,
-                                1500
-                            );
-
-                        } else {
-
-                            loseLife(
-                                "❌ Salah! Coba lagi!"
-                            );
-
-                        }
-
-                    }
-                );
-
-            });
-
-    }
- // =====================================
-// DOOR 5
-// =====================================
-
-function setupDoor5() {
-
-    currentQuestion =
-        randomItem(door5Questions);
-
-
-    document.getElementById("question").innerHTML =
-        currentQuestion.question;
-
-
-    document.getElementById("buttons").innerHTML = `
-
-        <div style="width:100%">
-
-            <input
-                id="jobAnswer"
-                class="memory-input"
-                type="text"
-                placeholder="Tulis pekerjaan..."
-                autocomplete="off"
-            >
-
-            <br>
-
-            <button
-                class="orange"
-                onclick="checkJob()">
-
-                🔓 Buka Pintu
-
-            </button>
-
-        </div>
-
-    `;
-
-}
-
-
-// =====================================
-// CEK JAWABAN DOOR 5
-// =====================================
-
-function checkJob() {
-
-    const input =
-        document.getElementById("jobAnswer");
-
-
-    const answer =
-        input.value.trim().toLowerCase();
-
-
-    if (answer === currentQuestion.answer) {
-
-        score += 300;
-
-        document.getElementById("score").textContent =
-            score;
-
-
-        document.getElementById("result").textContent =
-            "🎉 BENAR! Pintu terbuka!";
-
-
-        document.getElementById("result").className =
-            "correct";
-
-
-        document.getElementById("door")
-            .classList.add("open");
-
-
-        disableButtons();
-
-        clearInterval(timer);
-
-
-        setTimeout(nextDoor, 1500);
-
-    } else {
-
-        loseLife(
-            "❌ Salah! Coba perhatikan petunjuknya."
-        );
-
-    }
-
-}
-
-// =====================================
-// DOOR 6
-// =====================================
-
-function setupDoor6() {
-
-    currentQuestion =
-        randomItem(door6Questions);
-
-
-    document.getElementById("question").textContent =
-        currentQuestion.question;
-
-
-    document.getElementById("buttons").innerHTML = `
-
-        <div style="width:100%">
-
-            <input
-                id="animalAnswer"
-                class="memory-input"
-                type="text"
-                placeholder="Tulis dalam bahasa Inggris..."
-                autocomplete="off"
-            >
-
-            <br>
-
-            <button
-                class="orange"
-                onclick="checkAnimal()">
-
-                🔓 Buka Pintu
-
-            </button>
-
-        </div>
-
-    `;
-
-}
-
-
-// =====================================
-// CEK JAWABAN DOOR 6
-// =====================================
-
-function checkAnimal() {
-
-    const input =
-        document.getElementById("animalAnswer");
-
-
-    const answer =
-        input.value.trim().toLowerCase();
-
-
-    if (answer === currentQuestion.answer) {
-
-        score += 350;
-
-        document.getElementById("score").textContent =
-            score;
-
-
-        document.getElementById("result").textContent =
-            "🎉 BENAR! Jawabanmu tepat!";
-
-
-        document.getElementById("result").className =
-            "correct";
-
-
-        document.getElementById("door")
-            .classList.add("open");
-
-
-        disableButtons();
-
-        clearInterval(timer);
-
-
-        setTimeout(nextDoor, 1500);
-
-    } else {
-
-        loseLife(
-            "❌ Salah! Coba lagi."
-        );
-
-    }
-
-}
-
-// =====================================
-// DOOR 7
-// =====================================
-
-function setupDoor7() {
-
-    currentQuestion =
-        randomItem(door7Questions);
-
-
-    document.getElementById("question").textContent =
-        currentQuestion.question;
-
-
-    document.getElementById("buttons").innerHTML = `
-
-        <div style="width:100%">
-
-            <input
-                id="MathAnswer"
-                class="memory-input"
-                type="number"
-                placeholder="angka..."
-                autocomplete="off"
-            >
-
-            <br>
-
-            <button
-                class="orange"
-                onclick="checkMath()">
-
-                🔓 Buka Pintu
-
-            </button>
-
-        </div>
-
-    `;
-
-}
-
-
-// =====================================
-// CEK JAWABAN DOOR 7
-// =====================================
-
-function checkMath() {
-
-    const input =
-        document.getElementById("MathAnswer");
-
-
-    const answer =
-        input.value.trim().toLowerCase();
-
-
-    if (answer === currentQuestion.answer) {
-
-        score += 350;
-
-        document.getElementById("score").textContent =
-            score;
-
-
-        document.getElementById("result").textContent =
-            "🎉 BENAR! Jawabanmu tepat!";
-
-
-        document.getElementById("result").className =
-            "correct";
-
-
-        document.getElementById("door")
-            .classList.add("open");
-
-
-        disableButtons();
-
-        clearInterval(timer);
-
-
-        setTimeout(nextDoor, 1500);
-
-    } else {
-
-        loseLife(
-            "❌ Salah! Coba lagi."
-        );
-
-    }
-
-}
-
-
-
-    // =====================================
-    // NYAWA
-    // =====================================
-
-    function loseLife(message) {
-
-        lives--;
-
-        document.getElementById("lives").textContent =
-            lives;
-
-
-        document.getElementById("result").textContent =
-            message;
-
-
-        document.getElementById("result").className =
-            "wrong";
-
-
-        if (lives <= 0) {
-
-            clearInterval(timer);
-
-            document.getElementById("result").textContent =
-                "💀 GAME OVER!";
-
-            disableButtons();
-
-        }
-
-    }
-
-
-    // =====================================
-    // BUTTON
-    // =====================================
-
-    function disableButtons() {
-
-        document
-            .querySelectorAll("#buttons button")
-            .forEach(button => {
-
-                button.disabled = true;
-
-                button.style.opacity = "0.5";
-
-            });
 
     }
 
@@ -1415,10 +1426,726 @@ function checkMath() {
 
 
     // =====================================
+    // DOOR 4
+    // =====================================
+
+    function setupDoor4() {
+
+        currentQuestion =
+            randomItem(
+                door4Questions
+            );
+
+        document.getElementById(
+            "question"
+        ).textContent =
+            currentQuestion.question;
+
+        document.getElementById(
+            "buttons"
+        ).innerHTML = `
+
+            <div style="width:100%">
+
+                <p>
+                    ⏱️ Kamu hanya punya 15 detik!
+                </p>
+
+                <div style="
+                    display:grid;
+                    grid-template-columns:repeat(2, 1fr);
+                    gap:10px;
+                ">
+
+                    <button
+                        class="blue planet"
+                        data-answer="Merkurius">
+
+                        ☿️ Merkurius
+
+                    </button>
+
+                    <button
+                        class="blue planet"
+                        data-answer="Venus">
+
+                        🟡 Venus
+
+                    </button>
+
+                    <button
+                        class="blue planet"
+                        data-answer="Bumi">
+
+                        🌍 Bumi
+
+                    </button>
+
+                    <button
+                        class="blue planet"
+                        data-answer="Mars">
+
+                        🔴 Mars
+
+                    </button>
+
+                    <button
+                        class="blue planet"
+                        data-answer="Jupiter">
+
+                        🟠 Jupiter
+
+                    </button>
+
+                    <button
+                        class="blue planet"
+                        data-answer="Saturnus">
+
+                        🪐 Saturnus
+
+                    </button>
+
+                    <button
+                        class="blue planet"
+                        data-answer="Uranus">
+
+                        🔵 Uranus
+
+                    </button>
+
+                    <button
+                        class="blue planet"
+                        data-answer="Neptunus">
+
+                        🔵 Neptunus
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        `;
+
+        document
+            .querySelectorAll(".planet")
+            .forEach(button => {
+
+                button.addEventListener(
+                    "click",
+                    function () {
+
+                        if (
+                            this.dataset.answer ===
+                            currentQuestion.answer
+                        ) {
+
+                            winDoor(250);
+
+                        } else {
+
+                            loseLife(
+                                "❌ Salah! Coba lagi!"
+                            );
+
+                        }
+
+                    }
+                );
+
+            });
+
+    }
+
+
+    // =====================================
+    // DOOR 5
+    // =====================================
+
+    function setupDoor5() {
+
+        currentQuestion =
+            randomItem(
+                door5Questions
+            );
+
+        document.getElementById(
+            "question"
+        ).innerHTML =
+            currentQuestion.question;
+
+        document.getElementById(
+            "buttons"
+        ).innerHTML = `
+
+            <div style="width:100%">
+
+                <input
+                    id="jobAnswer"
+                    class="memory-input"
+                    type="text"
+                    placeholder="Tulis pekerjaan..."
+                    autocomplete="off"
+                >
+
+                <br>
+
+                <button
+                    class="orange"
+                    onclick="checkJob()">
+
+                    🔓 Buka Pintu
+
+                </button>
+
+            </div>
+
+        `;
+
+    }
+
+
+    function checkJob() {
+
+        const input =
+            document.getElementById(
+                "jobAnswer"
+            );
+
+        const answer =
+            input.value
+                .trim()
+                .toLowerCase();
+
+        if (
+            answer ===
+            currentQuestion.answer
+        ) {
+
+            winDoor(300);
+
+        } else {
+
+            loseLife(
+                "❌ Salah! Coba perhatikan petunjuknya."
+            );
+
+        }
+
+    }
+
+
+    // =====================================
+    // DOOR 6
+    // =====================================
+
+    function setupDoor6() {
+
+        currentQuestion =
+            randomItem(
+                door6Questions
+            );
+
+        document.getElementById(
+            "question"
+        ).textContent =
+            currentQuestion.question;
+
+        document.getElementById(
+            "buttons"
+        ).innerHTML = `
+
+            <div style="width:100%">
+
+                <input
+                    id="animalAnswer"
+                    class="memory-input"
+                    type="text"
+                    placeholder="Tulis dalam bahasa Inggris..."
+                    autocomplete="off"
+                >
+
+                <br>
+
+                <button
+                    class="orange"
+                    onclick="checkAnimal()">
+
+                    🔓 Buka Pintu
+
+                </button>
+
+            </div>
+
+        `;
+
+    }
+
+
+    function checkAnimal() {
+
+        const input =
+            document.getElementById(
+                "animalAnswer"
+            );
+
+        const answer =
+            input.value
+                .trim()
+                .toLowerCase();
+
+        if (
+            answer ===
+            currentQuestion.answer
+        ) {
+
+            winDoor(350);
+
+        } else {
+
+            loseLife(
+                "❌ Salah! Coba lagi."
+            );
+
+        }
+
+    }
+
+
+    // =====================================
+    // DOOR 7
+    // =====================================
+
+    function setupDoor7() {
+
+        currentQuestion =
+            randomItem(
+                door7Questions
+            );
+
+        document.getElementById(
+            "question"
+        ).textContent =
+            currentQuestion.question;
+
+        document.getElementById(
+            "buttons"
+        ).innerHTML = `
+
+            <div style="width:100%">
+
+                <input
+                    id="MathAnswer"
+                    class="memory-input"
+                    type="number"
+                    placeholder="Angka..."
+                    autocomplete="off"
+                >
+
+                <br>
+
+                <button
+                    class="orange"
+                    onclick="checkMath()">
+
+                    🔓 Buka Pintu
+
+                </button>
+
+            </div>
+
+        `;
+
+    }
+
+
+    function checkMath() {
+
+        const input =
+            document.getElementById(
+                "MathAnswer"
+            );
+
+        const answer =
+            input.value.trim();
+
+        if (
+            answer ===
+            currentQuestion.answer
+        ) {
+
+            winDoor(350);
+
+        } else {
+
+            loseLife(
+                "❌ Salah! Coba lagi."
+            );
+
+        }
+
+    }
+
+
+    // =====================================
+    // DOOR 8
+    // =====================================
+
+    function setupDoor8() {
+
+        currentQuestion =
+            randomItem(
+                door8Questions
+            );
+
+        document.getElementById(
+            "question"
+        ).textContent =
+            currentQuestion.question;
+
+        document.getElementById(
+            "buttons"
+        ).innerHTML = `
+
+            <div style="width:100%">
+
+                <input
+                    id="MathAnswer8"
+                    class="memory-input"
+                    type="number"
+                    placeholder="Angka..."
+                    autocomplete="off"
+                >
+
+                <br>
+
+                <button
+                    class="purple"
+                    onclick="checkMath8()">
+
+                    🧩 Pecahkan Polanya
+
+                </button>
+
+            </div>
+
+        `;
+
+    }
+
+
+    function checkMath8() {
+
+        const input =
+            document.getElementById(
+                "MathAnswer8"
+            );
+
+        const answer =
+            input.value.trim();
+
+        if (
+            answer ===
+            currentQuestion.answer
+        ) {
+
+            winDoor(400);
+
+        } else {
+
+            loseLife(
+                "🧩 Salah! Cari pola angkanya lagi."
+            );
+
+        }
+
+    }
+
+
+    // =====================================
+    // DOOR 9
+    // =====================================
+
+    function setupDoor9() {
+
+        currentQuestion =
+            randomItem(
+                door9Questions
+            );
+
+        document.getElementById(
+            "question"
+        ).textContent =
+            currentQuestion.question;
+
+        let options =
+            [...currentQuestion.options];
+
+        options.sort(
+            () =>
+                Math.random() - 0.5
+        );
+
+        document.getElementById(
+            "buttons"
+        ).innerHTML = `
+
+            <div style="
+                width:100%;
+                display:grid;
+                grid-template-columns:repeat(2, 1fr);
+                gap:12px;
+            ">
+
+                ${options.map(
+                    option => `
+
+                    <button
+                        class="blue trap-button"
+                        data-answer="${option}"
+                        onclick="checkDoor9(this)">
+
+                        🚪 ${option}
+
+                    </button>
+
+                `
+                ).join("")}
+
+            </div>
+
+        `;
+
+    }
+
+
+    function checkDoor9(button) {
+
+        const answer =
+            button.dataset.answer;
+
+        if (
+            answer ===
+            currentQuestion.answer
+        ) {
+
+            winDoor(500);
+
+        } else {
+
+            button.textContent =
+                "💀 JEBakan!";
+
+            button.style.background =
+                "#7f1d1d";
+
+            button.disabled = true;
+
+            loseLife(
+                "💀 SALAH! Itu pintu jebakan!"
+            );
+
+        }
+
+    }
+
+
+    // =====================================
+    // DOOR MASA DEPAN
+    // =====================================
+
+    function setupFutureDoor() {
+
+        document.getElementById(
+            "question"
+        ).innerHTML =
+            "🔒 Door " +
+            doorNumber +
+            " sedang dalam pengembangan...";
+
+        document.getElementById(
+            "buttons"
+        ).innerHTML = `
+
+            <p>
+                🚧 Pintu ini akan segera dibuka!
+            </p>
+
+        `;
+
+        clearInterval(timer);
+
+    }
+
+
+    // =====================================
+    // MENANG PINTU
+    // =====================================
+
+    function winDoor(points) {
+
+        score += points;
+
+        document.getElementById(
+            "score"
+        ).textContent = score;
+
+        document.getElementById(
+            "result"
+        ).textContent =
+            "🎉 BENAR! Pintu terbuka!";
+
+        document.getElementById(
+            "result"
+        ).className =
+            "correct";
+
+        document.getElementById(
+            "door"
+        ).classList.add("open");
+
+        disableButtons();
+
+        clearInterval(timer);
+
+        saveGame();
+
+        setTimeout(
+            nextDoor,
+            1500
+        );
+
+    }
+
+
+    // =====================================
+    // KEHILANGAN NYAWA
+    // =====================================
+
+    function loseLife(message) {
+
+        if (lives <= 0) return;
+
+        lives--;
+
+        document.getElementById(
+            "lives"
+        ).textContent =
+            lives;
+
+        document.getElementById(
+            "result"
+        ).textContent =
+            message;
+
+        document.getElementById(
+            "result"
+        ).className =
+            "wrong";
+
+        saveGame();
+
+        if (lives <= 0) {
+
+            gameOver();
+
+        }
+
+    }
+
+
+    // =====================================
+    // GAME OVER
+    // =====================================
+
+    function gameOver() {
+
+        clearInterval(timer);
+
+        clearTimeout(questionDelay);
+
+        disableButtons();
+
+        document.getElementById(
+            "result"
+        ).textContent =
+            "💀 GAME OVER!";
+
+        document.getElementById(
+            "result"
+        ).className =
+            "wrong";
+
+        setTimeout(() => {
+
+            alert(
+                "💀 Game Over!\n\n" +
+                "Skor akhir: " +
+                score +
+                "\n" +
+                "Kamu mencapai Door " +
+                doorNumber +
+                "."
+            );
+
+            localStorage.removeItem(
+                "100DoorsSave"
+            );
+
+            location.reload();
+
+        }, 500);
+
+    }
+
+
+    // =====================================
+    // DISABLE BUTTON
+    // =====================================
+
+    function disableButtons() {
+
+        document
+            .querySelectorAll(
+                "#buttons button"
+            )
+            .forEach(button => {
+
+                button.disabled = true;
+
+                button.style.opacity =
+                    "0.5";
+
+            });
+
+    }
+
+
+    // =====================================
     // RESTART
     // =====================================
 
     function restartGame() {
+
+        const confirmRestart =
+            confirm(
+                "⚠️ Yakin ingin restart?\n\n" +
+                "Progress Door dan skor akan dihapus."
+            );
+
+        if (!confirmRestart) {
+
+            return;
+
+        }
+
+        clearInterval(timer);
+
+        clearTimeout(questionDelay);
+
+        localStorage.removeItem(
+            "100DoorsSave"
+        );
 
         location.reload();
 
@@ -1429,12 +2156,36 @@ function checkMath() {
     // MULAI GAME
     // =====================================
 
-    setupDoor1();
+    const hasSave =
+        loadGame();
 
-    startTimer();
+    if (hasSave) {
+
+        setupCurrentDoor();
+
+        startTimer();
+
+    } else {
+
+        doorNumber = 1;
+
+        lives = 3;
+
+        score = 0;
+
+        time = 30;
+
+        updateStats();
+
+        setupDoor1();
+
+        startTimer();
+
+        saveGame();
+
+    }
 
 </script>
-
 
 </body>
 </html>
