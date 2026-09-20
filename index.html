@@ -222,6 +222,41 @@
                 font-size: 90px;
             }
         }
+
+        .door-reward {
+    width: 220px;
+    height: 220px;
+    object-fit: contain;
+    display: block;
+    margin: 20px auto;
+    border-radius: 20px;
+
+    animation: rewardPop 0.7s ease-out;
+
+    filter:
+        drop-shadow(0 0 15px #22c55e)
+        drop-shadow(0 0 30px #22c55e);
+}
+
+@keyframes rewardPop {
+
+    0% {
+        opacity: 0;
+        transform: scale(0.2) rotate(-10deg);
+    }
+
+    60% {
+        opacity: 1;
+        transform: scale(1.15) rotate(5deg);
+    }
+
+    100% {
+        transform: scale(1) rotate(0deg);
+    }
+
+}
+
+
     </style>
 </head>
 
@@ -268,35 +303,45 @@
     <h2 id="result"></h2>
 
 
-    <!-- CONTROL -->
+   <!-- CONTROL -->
 
-    <div class="controls">
+<div class="controls">
 
-        <button
-            class="purple"
-            onclick="togglePause()">
+    <button
+        id="backButton"
+        class="gray"
+        onclick="previousDoor()">
 
-            ⏸️ Pause
+        ⬅️ Kembali
 
-        </button>
+    </button>
 
-        <button
-            class="blue"
-            onclick="toggleScore()">
+    <button
+        class="purple"
+        onclick="togglePause()">
 
-            📊 Lihat Skor
+        ⏸️ Pause
 
-        </button>
+    </button>
 
-        <button
-            class="gray"
-            onclick="restartGame()">
+    <button
+        class="blue"
+        onclick="toggleScore()">
 
-            🔄 Restart
+        📊 Lihat Skor
 
-        </button>
+    </button>
 
-    </div>
+    <button
+        class="gray"
+        onclick="restartGame()">
+
+        🔄 Restart
+
+    </button>
+
+</div>
+
 
 
     <!-- SCORE PANEL -->
@@ -662,7 +707,8 @@
                 "Sepatu",
                 "Sendok"
             ],
-            answer: "Pensil"
+            answer: "Pensil",
+             image: "images/pensil.jpg"
         },
 
         {
@@ -674,7 +720,8 @@
                 "Burung",
                 "Kelinci"
             ],
-            answer: "Burung"
+            answer: "Burung",
+            image: "images/burung.jpg"
         },
 
         {
@@ -686,7 +733,8 @@
                 "Buku",
                 "Sepeda"
             ],
-            answer: "Kompor"
+            answer: "Kompor",
+            image: "images/kompor.jpg"
         },
 
         {
@@ -698,7 +746,8 @@
                 "Tas",
                 "Kursi"
             ],
-            answer: "Jam"
+            answer: "Jam",
+            image: "images/jam.jpg"
         },
 
         {
@@ -710,11 +759,58 @@
                 "Arang",
                 "Salju"
             ],
-            answer: "Rumput"
+            answer: "Rumput",
+            image: "images/rumput.jpg"
         }
 
     ];
 
+ const door10Questions = [
+ 
+        {
+         question:   
+                "4 PIN tersembunyi",
+        option: [
+            "- Angka pertama adalah jumlah matahari <br>",
+            "- Angka kedua adalah jumlah kaki laba-laba <br>",
+            "- Angka ketiga adalah jumlah sisi segitiga <br>",
+            "- Angka terakhir adalah jumlah jari pada satu tangan.",  
+         ],
+        answer: "1835"
+        },
+
+        {
+        question: "5 PIN tersembunyi",
+        option: [
+            "- Angka pertama adalah jumlah sisi persegi <br>",
+            "- Angka kedua adalah jumlah kaki kucing <br>",
+            "- Angka ketiga adalah jumlah bulan dalam satu tahun <br>",
+            "- Angka terakhir adalah jumlah mata pada manusia.",
+        ],
+        answer: "44122"
+        },
+        {
+        question: "5 PIN tersembunyi",
+        option: [
+            "- Angka pertama adalah jumlah roda sepeda <br>",
+            "- Angka kedua adalah jumlah sisi persegi <br>" ,
+            "- Angka ketiga adalah jumlah kaki anjing <br>" ,
+            "- Angka terakhir adalah jumlah bulan dalam satu tahun.",
+        ],
+        answer: "24812"
+        },
+        {           
+        question: "4 PIN tersembunyi",
+        option: [
+            "- Angka pertama adalah jumlah huruf pada kata 'PINTU' <br>" +
+            "- Angka kedua adalah jumlah sisi segitiga + 2 <br>" +
+            "- Angka ketiga adalah 3 × 2 <br>" +
+            "- Angka terakhir adalah jumlah huruf pada kata 'KODE'."
+        ],
+        answer: "5564"
+        },     
+        
+    ];
 
     // =====================================
     // RANDOM
@@ -810,25 +906,45 @@
     // UPDATE STATS
     // =====================================
 
-    function updateStats() {
+   function updateStats() {
 
-        document.getElementById(
-            "doorNumber"
-        ).textContent = doorNumber;
+    document.getElementById(
+        "doorNumber"
+    ).textContent = doorNumber;
 
-        document.getElementById(
-            "lives"
-        ).textContent = lives;
+    document.getElementById(
+        "lives"
+    ).textContent = lives;
 
-        document.getElementById(
-            "score"
-        ).textContent = score;
+    document.getElementById(
+        "score"
+    ).textContent = score;
 
-        document.getElementById(
-            "timer"
-        ).textContent = time;
+    document.getElementById(
+        "timer"
+    ).textContent = time;
+
+
+    // Tombol kembali
+    const backButton =
+        document.getElementById("backButton");
+
+    if (backButton) {
+
+        if (doorNumber <= 1) {
+
+            backButton.style.display = "none";
+
+        } else {
+
+            backButton.style.display = "inline-block";
+
+        }
 
     }
+
+}
+
 
 
     // =====================================
@@ -917,15 +1033,17 @@
 
         if (doorNumber === 4) return 15;
 
-        if (doorNumber === 5) return 20;
+        if (doorNumber === 5) return 30;
 
         if (doorNumber === 6) return 30;
 
-        if (doorNumber === 7) return 20;
+        if (doorNumber === 7) return 30;
 
-        if (doorNumber === 8) return 20;
+        if (doorNumber === 8) return 30;
 
-        if (doorNumber === 9) return 20;
+        if (doorNumber === 9) return 30;
+
+        if (doorNumber === 10) return 30;
 
         return 30;
 
@@ -1084,11 +1202,18 @@
 
         }
 
-        else {
+        else if (doorNumber ===10) {
 
-            setupFutureDoor();
+            setupDoor10();
 
         }
+
+         else if (doorNumber ===11) {
+
+            setupDoor11();
+
+        }
+
 
     }
 
@@ -1113,6 +1238,34 @@
         startTimer();
 
     }
+
+     // =====================================
+    // PREVIOUS DOOR
+    // =====================================
+
+    function previousDoor() {
+
+    if (doorNumber <= 1) {
+        return;
+    }
+
+    clearInterval(timer);
+    clearTimeout(questionDelay);
+
+    doorNumber--;
+
+    time = getTimeForDoor();
+
+    updateStats();
+
+    setupCurrentDoor();
+
+    startTimer();
+
+    saveGame();
+
+}
+
 
 
     // =====================================
@@ -1735,13 +1888,14 @@
             <div style="width:100%">
 
                 <input
-                    id="MathAnswer"
-                    class="memory-input"
-                    type="number"
-                    placeholder="Angka..."
-                    autocomplete="off"
-                >
-
+                id="MathAnswer"
+                class="memory-input"
+                type="text"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                placeholder="Masukkan PIN..."
+                autocomplete="off"
+            >
                 <br>
 
                 <button
@@ -1810,12 +1964,14 @@
             <div style="width:100%">
 
                 <input
-                    id="MathAnswer8"
-                    class="memory-input"
-                    type="number"
-                    placeholder="Angka..."
-                    autocomplete="off"
-                >
+                id="MathAnswer"
+                class="memory-input"
+                type="text"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                placeholder="Masukkan PIN..."
+                autocomplete="off"
+            >
 
                 <br>
 
@@ -1838,7 +1994,7 @@
 
         const input =
             document.getElementById(
-                "MathAnswer8"
+                "MathAnswer"
             );
 
         const answer =
@@ -1921,33 +2077,165 @@
 
     function checkDoor9(button) {
 
+    const answer =
+        button.dataset.answer;
+
+    if (
+        answer === currentQuestion.answer
+    ) {
+
+        // Hentikan timer
+        clearInterval(timer);
+
+        // Tambah skor
+        score += 500;
+
+        document.getElementById(
+            "score"
+        ).textContent = score;
+
+        // Tampilkan gambar reward
+        document.getElementById(
+            "door"
+        ).innerHTML = `
+            <img
+                src="${currentQuestion.image}"
+                class="door-reward"
+                alt="${currentQuestion.answer}"
+            >
+        `;
+
+        document.getElementById(
+            "result"
+        ).innerHTML =
+            "🎉 BENAR!<br>" +
+            "Kamu menemukan " +
+            currentQuestion.answer +
+            "!";
+
+        document.getElementById(
+            "result"
+        ).className =
+            "correct";
+
+       // Matikan semua tombol
+            disableButtons();
+
+            saveGame();
+
+            // Tampilkan gambar selama 3 detik
+            setTimeout(() => {
+
+                // Hapus gambar reward
+                document.getElementById("door").innerHTML = "🚪";
+
+                // Lanjut ke Door 10
+                nextDoor();
+
+            }, 1000);
+
+    }
+
+    else {
+
+        button.textContent =
+            "💀 JEBakan!";
+
+        button.style.background =
+            "#7f1d1d";
+
+        button.disabled = true;
+
+        loseLife(
+            "💀 SALAH! Itu pintu jebakan!"
+        );
+
+    }
+
+}
+
+
+    // =====================================
+    // DOOR 10
+    // =====================================
+
+   function setupDoor10() {
+
+    currentQuestion =
+        randomItem(
+            door10Questions
+        );
+
+    document.getElementById(
+    "question"
+    ).innerHTML =
+    currentQuestion.question +
+    "<br><br>" +
+    currentQuestion.option.join("<br>");
+
+
+    document.getElementById(
+        "buttons"
+    ).innerHTML = `
+
+        <div style="width:100%">
+
+           <input
+                id="PINAnswer"
+                class="memory-input"
+                type="text"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                placeholder="Masukkan PIN..."
+                autocomplete="off"
+            >
+
+
+            <br>
+
+            <button
+                class="orange"
+                onclick="checkPIN()">
+
+                🔓 Buka Pintu
+
+            </button>
+
+        </div>
+
+    `;
+
+}
+
+
+
+    function checkPIN() {
+
+        const input =
+            document.getElementById(
+                "PINAnswer"
+            );
+
         const answer =
-            button.dataset.answer;
+            input.value.trim();
 
         if (
             answer ===
             currentQuestion.answer
         ) {
 
-            winDoor(500);
+            winDoor(350);
 
         } else {
 
-            button.textContent =
-                "💀 JEBakan!";
-
-            button.style.background =
-                "#7f1d1d";
-
-            button.disabled = true;
-
             loseLife(
-                "💀 SALAH! Itu pintu jebakan!"
+                "❌ Salah! Coba lagi."
             );
 
         }
 
     }
+
 
 
     // =====================================
